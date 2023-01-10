@@ -1,5 +1,5 @@
 use std::io;
-use nucleoguide::Sequence;
+use nucleoguide::GuideDesign;
 
 fn main() {
     loop {
@@ -9,7 +9,7 @@ fn main() {
             Ok(n) => (),
             Err(n) => println!("Error with input sequence.")
         }
-        let test_result = Sequence::new(test_case.clone());
+        let test_result = GuideDesign::new(test_case);
         break;
     }
 }
