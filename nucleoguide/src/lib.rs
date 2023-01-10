@@ -1,12 +1,12 @@
 mod algorithm;
 
-pub struct Sequence {
+pub struct GuideDesign {
     seq: String
 }
 
-impl Sequence {
+impl GuideDesign {
     pub fn new(s: String) -> Self {
-        Sequence { seq: s }
+        GuideDesign { seq: s }
     }
     pub fn design(&self) -> &str {
         todo!();
