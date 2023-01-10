@@ -1,4 +1,5 @@
 use std::io;
+use nucleoguide::Sequence;
 
 fn main() {
     loop {
@@ -8,6 +9,7 @@ fn main() {
             Ok(n) => (),
             Err(n) => println!("Error with input sequence.")
         }
+        let test_result = Sequence::new(test_case.clone());
         break;
     }
 }

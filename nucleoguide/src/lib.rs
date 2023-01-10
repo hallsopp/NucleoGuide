@@ -1,14 +1,14 @@
-pub mod algorithm;
+mod algorithm;
 
-struct Sequence {
+pub struct Sequence {
     seq: String
 }
 
 impl Sequence {
-    fn new(s: String) -> Self {
+    pub fn new(s: String) -> Self {
         Sequence { seq: s }
     }
-    fn design(&self) -> String {
+    pub fn design(&self) -> &str {
         todo!();
     }
 }
