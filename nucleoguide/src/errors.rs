@@ -7,6 +7,7 @@ pub mod errors {
         IncorrectDNASequence,
         NoGuidesFound,
         InvalidPAM,
+        InvalidGRNAExclusionPattern,
     }
     
     impl fmt::Display for RuntimeError {
@@ -14,7 +15,8 @@ pub mod errors {
             match *self {
                 RuntimeError::IncorrectDNASequence => write!(f, "Incorrect DNA sequence provided."),
                 RuntimeError::NoGuidesFound => write!(f, "No compatible gRNAs found."),
-                RuntimeError::InvalidPAM => write!(f, "PAM Sequence is not valid.")
+                RuntimeError::InvalidPAM => write!(f, "PAM Sequence is not valid."),
+                RuntimeError::InvalidGRNAExclusionPattern => write!(f, "gRNA exclusion pattern is not valid."),
             }
         }
     }
