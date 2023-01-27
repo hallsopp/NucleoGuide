@@ -7,14 +7,11 @@ pub mod grnas {
 }
 
 // Exposed funtion to search for guides.
-pub fn run<'a>(s: &'a String, p: &String, gf_size: &usize, gf_xc_pattern: &String) -> Result<HashSet<&'a str>, RuntimeError> {
-    let compiled_re = compile_re_pam_gfxc(p)?;
+pub fn run<'a>(s: &'a String, p: &String, gf_size: &usize, gf_xc_pattern: &String, gf_ic_pattern: &String) -> Result<Vec<(&'a str, usize)>, RuntimeError> {
+    let compiled_p = compile_re_pam_gfxc(p)?;
     let compiled_gf_xc = if !gf_xc_pattern.is_empty() {Some(compile_re_pam_gfxc(gf_xc_pattern)?)} else {None};
-    let mut fw = re_pam_search(s, &compiled_re)
-        .and_then(|n| extract_grna_seq(s, n, gf_size));
-    if fw.is_some() && compiled_gf_xc.is_some() {
-        fw = Some(exclude_grna(fw.unwrap(), &compiled_gf_xc.unwrap()));
-    }
+    let compiled_gf_ic = if !gf_ic_pattern.is_empty() {Some(compile_re_pam_gfxc(gf_ic_pattern)?)} else {None};
+    let fw = run_thread(s, &compiled_p, gf_size, &compiled_gf_xc, &compiled_gf_ic);
     if let Some(results) = fw {
         Ok(results)
     } else {
@@ -22,16 +19,26 @@ pub fn run<'a>(s: &'a String, p: &String, gf_size: &usize, gf_xc_pattern: &Strin
     }
 }
 
+fn run_thread<'a>(s: &'a String, comp_p: &regex::Regex, gf_size: &usize, comp_xc: &Option<regex::Regex>, comp_ic: &Option<regex::Regex>) -> Option<Vec<(&'a str, usize)>> {
+    let mut candidates = re_pam_search(s, comp_p)
+        .and_then(|x| extract_grna_seq(s, x, gf_size));
+    if candidates.is_some() {
+        if comp_xc.is_some() { 
+            candidates = exclude_grna(candidates.unwrap(), comp_xc.as_ref().unwrap()); 
+        }
+        if comp_ic.is_some() {
+            candidates = include_grna(candidates.unwrap(), &comp_ic.as_ref().unwrap()); 
+        }
+    } else { return None }
+    if candidates.is_none() { None } else { candidates }
+}
+
 // Function to search using regex
-fn re_pam_search(s: &String, re: &regex::Regex) -> Option<Vec<usize>> {
+fn re_pam_search<'a>(s: &String, re: &regex::Regex) -> Option<Vec<usize>> {
     let mat: Vec<usize> = re.find_iter(s)
         .map(|n| n.start())
         .collect();
-    if mat.len() < 1 {
-        return None
-    } else {
-        return Some(mat)
-    }
+    if mat.is_empty() {None} else {Some(mat)}
 }
 
 // Function to compile the PAM sequence into a regex expression 
@@ -47,26 +54,29 @@ fn compile_re_pam_gfxc(p: &String) -> Result<regex::Regex, RuntimeError> {
 }
 
 // fn to extract guide sequence from coordinates 
-fn extract_grna_seq<'a>(s: &'a String, indexes: Vec<usize>, size: &usize) -> Option<HashSet<&'a str>> {
-    let mut shortlist = HashSet::new();
-    for pos in indexes.iter() {
-        if pos < size {
+fn extract_grna_seq<'a, 'b>(s: &'a String, indexes: Vec<usize>, size: &usize) -> Option<Vec<(&'a str, usize)>> {
+    let mut shortlist = Vec::new();
+    let mut filter = HashSet::new();
+    for pos in indexes.iter().enumerate() {
+        if pos.1 < size {
             continue;
         } else {
-            let start = pos - size;
-            shortlist.insert(&s[start..*pos]);
+            let start = *pos.1 - size;
+            shortlist.push((&s[start..*pos.1], indexes[pos.0]));
         }
     };
-    if shortlist.is_empty() {
-        None
-    } else {
-        Some(shortlist)
-    }
+    let fin: Vec<(&str, usize)> = shortlist.into_iter().filter(|(s, _)| filter.insert(*s)).collect();
+    if fin.is_empty() {None} else {Some(fin)}
 }
 
-fn exclude_grna<'a>(mut candidates: HashSet<&'a str>, gf_xc: &regex::Regex) -> HashSet<&'a str> {
-    candidates.retain(|x| !gf_xc.is_match(x));
-    candidates
+fn exclude_grna<'a>(mut candidates: Vec<(&'a str, usize)>, gf_xc: &regex::Regex) -> Option<Vec<(&'a str, usize)>> {
+    candidates.retain(|x| !gf_xc.is_match(x.0));
+    if candidates.is_empty() {None} else {Some(candidates)}
+}
+
+fn include_grna<'a>(mut candidates: Vec<(&'a str, usize)>, gf_ic: &regex::Regex) -> Option<Vec<(&'a str, usize)>> {
+    candidates.retain(|x| gf_ic.is_match(x.0));
+    if candidates.is_empty() {None} else {Some(candidates)}
 }
 
 #[cfg(test)]
@@ -138,26 +148,53 @@ mod tests {
         let index = re_pam_search(&seq, &compiled_re).unwrap();
         let result_1 = extract_grna_seq(&seq, index, &GRNA_SIZE).unwrap();
         let result = exclude_grna(result_1, &compiled_gf_xc);
-        assert!(result.is_empty())
+        assert!(result.is_none())
     }
     #[test]
-    fn grna_exclusion_2() {
+    fn grna_inclusion() {
         let seq = String::from("AGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAACGCATGACTAGCATGCATGCATCGTACGTAGCTTTAAATCGATAGG");
         let compiled_re = compile_re_pam_gfxc(&CAS9_UPPER.to_string()).unwrap();
-        let compiled_gf_xc = compile_re_pam_gfxc(&"TTTT".to_string()).unwrap();
+        let compiled_gf_xc = compile_re_pam_gfxc(&"TTT".to_string()).unwrap();
         let index = re_pam_search(&seq, &compiled_re).unwrap();
         let result_1 = extract_grna_seq(&seq, index, &GRNA_SIZE).unwrap();
-        let result = exclude_grna(result_1, &compiled_gf_xc);
-        assert_eq!(result.len(), 2)
+        let result = include_grna(result_1, &compiled_gf_xc);
+        assert_eq!(result.unwrap().len(), 1)
     }
     #[test]
-    fn grna_exclusion_3() {
+    fn grna_exclusion_with_n() {
         let seq = String::from("AGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAACGCATGACTAGCATGCATGCATCGTACGTAGCTTTAAATCGATAGG");
         let compiled_re = compile_re_pam_gfxc(&CAS9_UPPER.to_string()).unwrap();
         let compiled_gf_xc = compile_re_pam_gfxc(&"n".to_string()).unwrap();
         let index = re_pam_search(&seq, &compiled_re).unwrap();
         let result_1 = extract_grna_seq(&seq, index, &GRNA_SIZE).unwrap();
         let result = exclude_grna(result_1, &compiled_gf_xc);
-        assert!(result.is_empty())
+        assert!(result.is_none())
+    }
+    #[test]
+    fn thread_test() {
+        let seq = String::from("AGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAACGCATGACTAGCATGCATGCATCGTACGTAGCTTTAAATCGATAGG");
+        let compiled_re = compile_re_pam_gfxc(&CAS9_UPPER.to_string()).unwrap();
+        let compiled_gf_xc = Some(compile_re_pam_gfxc(&"TTT".to_string()).unwrap());
+        let compiled_gf_ic = Some(compile_re_pam_gfxc(&"TTTT".to_string()).unwrap());
+        let result = run_thread(&seq, &compiled_re, &GRNA_SIZE, &compiled_gf_xc, &compiled_gf_ic);
+        assert_eq!(result.unwrap().len(), 1)
+    }
+    #[test]
+    fn thread_test_2() {
+        let seq = String::from("AGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAACGCATGACTAGCATGCATGCATCGTACGTAGCTTTAAATCGATAGG");
+        let compiled_re = compile_re_pam_gfxc(&CAS9_UPPER.to_string()).unwrap();
+        let compiled_gf_xc = None;
+        let compiled_gf_ic = Some(compile_re_pam_gfxc(&"TTTT".to_string()).unwrap());
+        let result = run_thread(&seq, &compiled_re, &GRNA_SIZE, &compiled_gf_xc, &compiled_gf_ic);
+        assert!(result.is_none())
+    }
+    #[test]
+    fn thread_test_3() {
+        let seq = String::from("AGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAAGCTTAGCTAGGAACGCATGACTAGCATGCATGCATCGTACGTAGCTTTAAATCGATAGG");
+        let compiled_re = compile_re_pam_gfxc(&"TTTT".to_string()).unwrap();
+        let compiled_gf_xc = None;
+        let compiled_gf_ic = Some(compile_re_pam_gfxc(&"TTTT".to_string()).unwrap());
+        let result = run_thread(&seq, &compiled_re, &GRNA_SIZE, &compiled_gf_xc, &compiled_gf_ic);
+        assert!(result.is_none())
     }
 }
