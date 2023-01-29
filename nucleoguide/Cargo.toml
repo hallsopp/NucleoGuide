@@ -1,7 +1,9 @@
 [package]
 name = "nucleoguide"
 version = "0.1.0"
+authors = ["Harry Allsopp <harryallsopp8@gmail.com>"]
 edition = "2021"
+description = "Guide RNA design tool"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
