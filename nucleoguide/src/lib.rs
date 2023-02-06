@@ -16,6 +16,8 @@ struct Grna {
     size: usize,
     xc_pattern: String,
     ic_pattern: String,
+    min_gc: f32,
+    max_gc: f32,
 }
 
 impl GuideDesign {
@@ -26,6 +28,8 @@ impl GuideDesign {
         gf_size: usize,
         gf_xc_pattern: String,
         gf_ic_pattern: String,
+        gf_min_gc: f32,
+        gf_max_gc: f32,
     ) -> Result<Self, RuntimeError> {
         let dna_ab = alphabets::dna::alphabet();
         // check that input seqeunce is valid DNA
@@ -39,6 +43,8 @@ impl GuideDesign {
                     size: gf_size,
                     xc_pattern: gf_xc_pattern,
                     ic_pattern: gf_ic_pattern,
+                    min_gc: gf_min_gc,
+                    max_gc: gf_max_gc,
                 },
             })
         }
@@ -51,6 +57,8 @@ impl GuideDesign {
             &self.guide_features.size,
             &self.guide_features.xc_pattern,
             &self.guide_features.ic_pattern,
+            &self.guide_features.min_gc,
+            &self.guide_features.max_gc,
         ) {
             Ok(n) => Ok(n),
             Err(n) => Err(n),
