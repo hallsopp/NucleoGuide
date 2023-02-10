@@ -27,7 +27,7 @@ struct Args {
         id = "grna-inclusion-pattern",
         long,
         help = "Only return gRNAs if they contain this",
-        default_value = "20"
+        default_value = ""
     )]
     gic: String,
     #[arg(
