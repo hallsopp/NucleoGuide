@@ -61,8 +61,8 @@ fn main() {
         Err(error) => panic!("{}", error),
     };
     match init.idgrnas() {
-        Ok(n) => println!("{:?}", n),
-        Err(error) => panic!("{}", error),
+        Ok(n) => println!("{n:?}"),
+        Err(error) => panic!("{error}"),
     }
 }
 

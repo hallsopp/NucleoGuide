@@ -1,19 +1,19 @@
 use crate::errors::RuntimeError;
 use bio::seq_analysis::gc;
-use bio::alphabets::dna;
 use regex::{Regex, RegexBuilder};
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 // Exposed funtion to search for guides.
 pub fn run<'a>(
     s: &'a str,
+    rv: &'a str,
     p: &str,
     gf_size: &usize,
     gf_xc_pattern: &str,
     gf_ic_pattern: &str,
     gf_min_gc: &f32,
     gf_max_gc: &f32,
-) -> Result<Vec<(&'a str, usize)>, RuntimeError> {
+) -> Result<HashMap<String, Vec<(&'a str, usize)>>, RuntimeError> {
     let compiled_p = compile_re_pam_gfxc(p)?;
     let compiled_gf_xc = if !gf_xc_pattern.is_empty() {
         Some(compile_re_pam_gfxc(gf_xc_pattern)?)
@@ -25,6 +25,16 @@ pub fn run<'a>(
     } else {
         None
     };
+    let mut results: HashMap<String, Vec<(&str, usize)>> = HashMap::new();
+    let rv = run_thread(
+        rv,
+        &compiled_p,
+        gf_size,
+        &compiled_gf_xc,
+        &compiled_gf_ic,
+        gf_min_gc,
+        gf_max_gc,
+    );
     let fw = run_thread(
         s,
         &compiled_p,
@@ -34,10 +44,16 @@ pub fn run<'a>(
         gf_min_gc,
         gf_max_gc,
     );
-    if let Some(results) = fw {
-        Ok(results)
-    } else {
+    if let Some(r) = rv {
+        results.insert("rv".to_string(), r);
+    } 
+    if let Some(f) = fw {
+        results.insert("fw".to_string(), f);
+    } 
+    if results.is_empty() {
         Err(RuntimeError::NoGuidesFound)
+    } else {
+        Ok(results)
     }
 }
 
@@ -74,11 +90,6 @@ fn re_pam_search(s: &str, re: &Regex) -> Option<Vec<usize>> {
         Some(mat)
     }
 }
-
-// fn get_revcomp(s: &String) -> &str {
-//     let seq = dna::revcomp(s.into_bytes());
-
-// }
 
 // Function to compile the PAM sequence into a regex expression
 fn compile_re_pam_gfxc(p: &str) -> Result<Regex, RuntimeError> {
