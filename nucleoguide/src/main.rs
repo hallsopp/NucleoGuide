@@ -79,5 +79,5 @@ const HELP: &str = "\
 ";
 
 const ABOUT: &str = "\
-Guide RNA design tool built with performance and ease-of-use in mind.
+Design your guides with NucleoGuide!
 ";
