@@ -21,4 +21,3 @@ impl fmt::Display for RuntimeError {
         }
     }
 }
-
