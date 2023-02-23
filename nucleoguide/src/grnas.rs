@@ -1,7 +1,8 @@
 use crate::errors::RuntimeError;
 use bio::seq_analysis::gc;
-use regex::{Regex, RegexBuilder};
-use std::collections::{HashSet, HashMap};
+use regex::Regex;
+use regex::RegexBuilder;
+use std::collections::{HashMap, HashSet};
 
 // Exposed funtion to search for guides.
 pub fn run<'a>(
@@ -46,10 +47,10 @@ pub fn run<'a>(
     );
     if let Some(r) = rv {
         results.insert("rv".to_string(), r);
-    } 
+    }
     if let Some(f) = fw {
         results.insert("fw".to_string(), f);
-    } 
+    }
     if results.is_empty() {
         Err(RuntimeError::NoGuidesFound)
     } else {

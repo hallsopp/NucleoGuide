@@ -1,4 +1,4 @@
-use clap::{Parser};
+use clap::Parser;
 use nucleoguide::GuideDesign;
 
 #[derive(Debug, Parser)]
