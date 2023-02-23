@@ -1,10 +1,11 @@
-use std::collections::HashMap;
 use crate::errors::RuntimeError;
-use std::str::from_utf8;
 use crate::grnas::run;
 use bio::alphabets;
+use std::collections::HashMap;
+use std::str::from_utf8;
 mod errors;
 mod grnas;
+mod offtarget;
 
 #[derive(Debug)]
 pub struct GuideDesign {
@@ -77,6 +78,6 @@ fn get_revcomp(s: &[u8]) -> Result<String, RuntimeError> {
     let seq = alphabets::dna::revcomp(s);
     match from_utf8(&seq) {
         Ok(n) => Ok(n.to_owned()),
-        Err(n) => Err(RuntimeError::IncorrectDNASequence)   
+        Err(n) => Err(RuntimeError::IncorrectDNASequence),
     }
 }
