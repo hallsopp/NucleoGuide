@@ -6,25 +6,28 @@ use bio::alignment::AlignmentOperation::*;
 use std::collections::HashMap;
 
 pub fn run(
-    candidates: HashMap<String, Vec<(&str, usize)>>,
+    candidates: Vec<(&str, usize)>,
     reference: String,
     go: i32,
     ge: i32,
-) -> () {
+    minimum_mismatch: &usize,
+) -> Result<(), RuntimeError> {
     let score = |a: u8, b: u8| if a == b { 1i32 } else { -1i32 };
     let aligner = pairwise::Aligner::new(go, ge, score);
+    todo!()
 }
 
+// Run individual alignment against two sequences 
 fn run_alignment<F: pairwise::MatchFunc>(
     s1: &str,
     s2: &str,
     mut aligner: pairwise::Aligner<F>,
     gf_size: &usize,
-    mm: &usize,
+    minimum_mismatch: &usize,
 ) -> Option<Vec<Alignment>> {
     let mut matches = Vec::new();
     let mut reref = s2;
-    let desired = *gf_size - mm;
+    let desired = *gf_size - minimum_mismatch;
     loop {
         if reref.len() < desired {
             break;

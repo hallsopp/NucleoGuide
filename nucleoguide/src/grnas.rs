@@ -5,6 +5,8 @@ use regex::RegexBuilder;
 use std::collections::{HashMap, HashSet};
 
 // Exposed funtion to search for guides.
+// This function will return the strand (fw or rv) and a list of the 
+// candidates on this reference 
 pub fn run<'a>(
     s: &'a str,
     rv: &'a str,
