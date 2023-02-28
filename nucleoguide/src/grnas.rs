@@ -4,6 +4,28 @@ use regex::Regex;
 use regex::RegexBuilder;
 use std::collections::HashSet;
 
+#[derive(Debug)]
+pub struct Grna<'a> {
+    id: usize,
+    seq: &'a str,
+    coords: usize,
+    strand: i32,
+}
+
+impl<'a> Grna<'a> {
+    pub fn new(id: usize, seq: &'a str, coords: usize, strand: i32) -> Self {
+        Grna {
+            id,
+            seq,
+            coords,
+            strand,
+        }
+    }
+    pub fn get_seq(&self) -> &'a str {
+        self.seq
+    }
+}
+
 // Exposed funtion to search for guides.
 // This function will return the strand (fw or rv) and a list of the
 // candidates on this reference
@@ -63,25 +85,6 @@ pub fn run<'a>(
         Err(RuntimeError::NoGuidesFound)
     } else {
         Ok(results)
-    }
-}
-
-#[derive(Debug)]
-pub struct Grna<'a> {
-    id: usize,
-    seq: &'a str,
-    coords: usize,
-    strand: i32,
-}
-
-impl<'a> Grna<'a> {
-    pub fn new(id: usize, seq: &'a str, coords: usize, strand: i32) -> Self {
-        Grna {
-            id,
-            seq,
-            coords,
-            strand,
-        }
     }
 }
 
@@ -222,11 +225,11 @@ mod tests {
 
     #[test]
     fn cas9_pam() {
-        let result = compile_re_pam_gfxc(&CAS9_UPPER.to_string()).unwrap();
+        compile_re_pam_gfxc(&CAS9_UPPER.to_string()).unwrap();
     }
     #[test]
     fn cas9_lowercase_pam() {
-        let result = compile_re_pam_gfxc(&CAS9_LOWER.to_string()).unwrap();
+        compile_re_pam_gfxc(&CAS9_LOWER.to_string()).unwrap();
     }
     #[test]
     fn basic_search() {
