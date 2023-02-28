@@ -2,11 +2,11 @@ use crate::errors::RuntimeError;
 use bio::seq_analysis::gc;
 use regex::Regex;
 use regex::RegexBuilder;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 // Exposed funtion to search for guides.
-// This function will return the strand (fw or rv) and a list of the 
-// candidates on this reference 
+// This function will return the strand (fw or rv) and a list of the
+// candidates on this reference
 pub fn run<'a>(
     s: &'a str,
     rv: &'a str,
@@ -16,7 +16,7 @@ pub fn run<'a>(
     gf_ic_pattern: &str,
     gf_min_gc: &f32,
     gf_max_gc: &f32,
-) -> Result<HashMap<String, Vec<(&'a str, usize)>>, RuntimeError> {
+) -> Result<Vec<Grna<'a>>, RuntimeError> {
     let compiled_p = compile_re_pam_gfxc(p)?;
     let compiled_gf_xc = if !gf_xc_pattern.is_empty() {
         Some(compile_re_pam_gfxc(gf_xc_pattern)?)
@@ -28,7 +28,7 @@ pub fn run<'a>(
     } else {
         None
     };
-    let mut results: HashMap<String, Vec<(&str, usize)>> = HashMap::new();
+    let mut results: Vec<Grna> = Vec::new();
     let rv = run_thread(
         rv,
         &compiled_p,
@@ -37,6 +37,7 @@ pub fn run<'a>(
         &compiled_gf_ic,
         gf_min_gc,
         gf_max_gc,
+        1,
     );
     let fw = run_thread(
         s,
@@ -46,17 +47,41 @@ pub fn run<'a>(
         &compiled_gf_ic,
         gf_min_gc,
         gf_max_gc,
+        0,
     );
     if let Some(r) = rv {
-        results.insert("rv".to_string(), r);
+        for i in r {
+            results.push(i);
+        }
     }
     if let Some(f) = fw {
-        results.insert("fw".to_string(), f);
+        for i in f {
+            results.push(i);
+        }
     }
     if results.is_empty() {
         Err(RuntimeError::NoGuidesFound)
     } else {
         Ok(results)
+    }
+}
+
+#[derive(Debug)]
+pub struct Grna<'a> {
+    id: usize,
+    seq: &'a str,
+    coords: usize,
+    strand: i32,
+}
+
+impl<'a> Grna<'a> {
+    pub fn new(id: usize, seq: &'a str, coords: usize, strand: i32) -> Self {
+        Grna {
+            id,
+            seq,
+            coords,
+            strand,
+        }
     }
 }
 
@@ -68,7 +93,9 @@ fn run_thread<'a>(
     comp_ic: &Option<Regex>,
     gf_min_gc: &f32,
     gf_max_gc: &f32,
-) -> Option<Vec<(&'a str, usize)>> {
+    strand: i32,
+) -> Option<Vec<Grna<'a>>> {
+    let mut fin: Vec<Grna> = Vec::new();
     let mut candidates = re_pam_search(s, comp_p).and_then(|x| extract_grna_seq(s, x, gf_size));
     if candidates.is_some() {
         candidates = gc_filter(candidates.unwrap(), gf_min_gc, gf_max_gc);
@@ -81,7 +108,17 @@ fn run_thread<'a>(
     } else {
         return None;
     }
-    Some(candidates?)
+    if candidates.is_some() {
+        let mut id_init = 0;
+        for cand in candidates.unwrap() {
+            let init = Grna::new(id_init, cand.0, cand.1, strand);
+            fin.push(init);
+            id_init += 1;
+        }
+        Some(fin)
+    } else {
+        return None;
+    }
 }
 
 // Function to search using regex
@@ -281,6 +318,7 @@ mod tests {
             &compiled_gf_ic,
             &MIN_GC,
             &MAX_GC,
+            0,
         );
         assert_eq!(result.unwrap().len(), 1)
     }
@@ -298,6 +336,7 @@ mod tests {
             &compiled_gf_ic,
             &MIN_GC,
             &MAX_GC,
+            0,
         );
         assert!(result.is_none())
     }
@@ -315,6 +354,7 @@ mod tests {
             &compiled_gf_ic,
             &MIN_GC,
             &MAX_GC,
+            0,
         );
         assert!(result.is_none())
     }
@@ -334,6 +374,7 @@ mod tests {
             &compiled_gf_ic,
             &min,
             &max,
+            0,
         );
         assert_eq!(result.unwrap().len(), 1)
     }

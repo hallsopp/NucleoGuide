@@ -1,6 +1,7 @@
 use crate::errors::RuntimeError;
 use crate::grnas::run;
 use bio::alphabets;
+use grnas::Grna;
 use std::collections::HashMap;
 use std::str::from_utf8;
 mod errors;
@@ -12,16 +13,11 @@ pub struct GuideDesign {
     seq: String,
     revcomp: String,
     pam: String,
-    guide_features: Grna,
-}
-
-#[derive(Debug)]
-struct Grna {
-    size: usize,
-    xc_pattern: String,
-    ic_pattern: String,
-    min_gc: f32,
-    max_gc: f32,
+    gf_size: usize,
+    gf_xc_pattern: String,
+    gf_ic_pattern: String,
+    gf_min_gc: f32,
+    gf_max_gc: f32,
 }
 
 impl GuideDesign {
@@ -46,27 +42,25 @@ impl GuideDesign {
                 seq: s,
                 revcomp: rc,
                 pam: p,
-                guide_features: Grna {
-                    size: gf_size,
-                    xc_pattern: gf_xc_pattern,
-                    ic_pattern: gf_ic_pattern,
-                    min_gc: gf_min_gc,
-                    max_gc: gf_max_gc,
-                },
+                gf_size: gf_size,
+                gf_xc_pattern: gf_xc_pattern,
+                gf_ic_pattern: gf_ic_pattern,
+                gf_min_gc: gf_min_gc,
+                gf_max_gc: gf_max_gc,
             })
         }
     }
     // Funtion to search for grnas
-    pub fn idgrnas(&self) -> Result<HashMap<String, Vec<(&str, usize)>>, RuntimeError> {
+    pub fn idgrnas(&self) -> Result<Vec<Grna>, RuntimeError> {
         match run(
             &self.seq,
             &self.revcomp,
             &self.pam,
-            &self.guide_features.size,
-            &self.guide_features.xc_pattern,
-            &self.guide_features.ic_pattern,
-            &self.guide_features.min_gc,
-            &self.guide_features.max_gc,
+            &self.gf_size,
+            &self.gf_xc_pattern,
+            &self.gf_ic_pattern,
+            &self.gf_min_gc,
+            &self.gf_max_gc,
         ) {
             Ok(n) => Ok(n),
             Err(n) => Err(n),
