@@ -17,7 +17,7 @@ pub fn run(
     todo!()
 }
 
-// Run individual alignment against two sequences 
+// Run individual alignment against two sequences
 fn run_alignment<F: pairwise::MatchFunc>(
     s1: &str,
     s2: &str,
