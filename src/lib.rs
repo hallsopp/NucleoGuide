@@ -51,11 +51,11 @@ impl GuideDesign {
                 ot_search: ots,
                 revcomp: rc,
                 pam: p,
-                gf_size: gf_size,
-                gf_xc_pattern: gf_xc_pattern,
-                gf_ic_pattern: gf_ic_pattern, // need to tidy these up, can use shorthand
-                gf_min_gc: gf_min_gc,
-                gf_max_gc: gf_max_gc,
+                gf_size,
+                gf_xc_pattern,
+                gf_ic_pattern, // need to tidy these up, can use shorthand
+                gf_min_gc,
+                gf_max_gc,
                 ot_go,
                 ot_ge,
                 ot_mm,
@@ -64,7 +64,7 @@ impl GuideDesign {
     }
     // Funtion to search for grnas
     pub fn idgrnas(&self) -> Result<Vec<Grna>, RuntimeError> {
-        match grnas::run(
+        grnas::run(
             &self.seq,
             &self.revcomp,
             &self.pam,
@@ -73,12 +73,10 @@ impl GuideDesign {
             &self.gf_ic_pattern,
             &self.gf_min_gc,
             &self.gf_max_gc,
-        ) {
-            Ok(n) => Ok(n),
-            Err(n) => Err(n),
-        }
+        ) 
     }
-    pub fn idofftargets(&self, grnas: Vec<Grna>) -> Result<Option<Vec<OffTargetList>>, RuntimeError> {
+    // Function to search for off-targets 
+    pub fn idofftargets<'a>(&self, grnas: Vec<Grna<'a>>) -> Result<Option<Vec<OffTargetList<'a>>>, RuntimeError> {
         offtarget::run(grnas, &self.ot_search, &self.gf_size, &self.ot_go, &self.ot_ge, &self.ot_mm)
     }
 }

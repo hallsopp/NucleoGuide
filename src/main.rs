@@ -47,23 +47,24 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
-    let init = match GuideDesign::new(
-        args.sequence,
-        args.pam,
-        args.gsize,
-        args.gxc,
-        args.gic,
-        args.ggcmin,
-        args.ggcmax,
-    ) {
-        Ok(n) => n,
-        Err(error) => panic!("{}", error),
-    };
-    match init.idgrnas() {
-        Ok(n) => println!("{n:?}"),
-        Err(error) => panic!("{error}"),
-    }
+    todo!();
+    // let args = Args::parse();
+    // let init = match GuideDesign::new(
+    //     args.sequence,
+    //     args.pam,
+    //     args.gsize,
+    //     args.gxc,
+    //     args.gic,
+    //     args.ggcmin,
+    //     args.ggcmax,
+    // ) {
+    //     Ok(n) => n,
+    //     Err(error) => panic!("{}", error),
+    // };
+    // match init.idgrnas() {
+    //     Ok(n) => println!("{n:?}"),
+    //     Err(error) => panic!("{error}"),
+    // }
 }
 
 const HELP: &str = "\
